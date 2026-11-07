@@ -1,6 +1,13 @@
 document.getElementById('yr').textContent = new Date().getFullYear();
 
-// sticky header border once scrolled
+// copy the email address to the clipboard
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(b.dataset.copy); } catch { return; }
+  b.textContent = 'Copied ✓';
+  setTimeout(() => { b.textContent = 'Copy'; }, 1600);
+}));
+
+// header: frosted and compact once scrolled
 const bar = document.getElementById('bar');
 addEventListener('scroll', () => bar.classList.toggle('scrolled', scrollY > 8), { passive: true });
 
@@ -15,92 +22,301 @@ toggle.addEventListener('click', () => {
 });
 syncToggle();
 
-// ---------- reveal sections as they scroll in ----------
-const reveals = document.querySelectorAll('.reveal');
-if ('IntersectionObserver' in window) {
+// ---------- blocks slide up as they scroll in ----------
+// runs after the gallery is split into columns, see the end of the file
+function setupRise() {
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const blocks = document.querySelectorAll('.sec-head, .bento > *, .lab, .cards > *, .tabs, .hobbies > li, .gallery a, .cta');
   const io = new IntersectionObserver(entries => {
-    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-  }, { rootMargin: '0px 0px -10% 0px' });
-  reveals.forEach(el => io.observe(el));
-} else reveals.forEach(el => el.classList.add('in'));
+    let n = 0;   // blocks entering together get a small stagger
+    for (const e of entries) {
+      const el = e.target;
+      // above the viewport (scrolling up, or jumped past via the nav): just show it
+      if (e.boundingClientRect.top < 0) { el.classList.remove('rise'); io.unobserve(el); continue; }
+      if (!e.isIntersecting) continue;
+      el.style.setProperty('--d', `${Math.min(n++, 4) * 90}ms`);
+      el.classList.add('in');
+      const done = ev => {   // ignore animations finishing inside the block
+        if (ev.target !== el) return;
+        el.classList.remove('rise', 'in'); el.style.removeProperty('--d');
+        el.removeEventListener('animationend', done);
+      };
+      el.addEventListener('animationend', done);
+      io.unobserve(el);
+    }
+  }, { rootMargin: '0px 0px -40px 0px' });
+  blocks.forEach(el => { if (el.closest('.exp-panel')) return; el.classList.add('rise'); io.observe(el); });
+}
 
-// ---------- highlight the nav link for the section in view ----------
+// ---------- nav: gliding highlight for the section in view (and on hover) ----------
 const navLinks = [...document.querySelectorAll('nav a')];
+const navInd = document.querySelector('nav .nav-ind');
+function placeNavInd(a) {
+  if (!a || !a.offsetParent) { navInd.style.opacity = 0; return; }   // none active, or link hidden on small screens
+  const li = a.parentElement;
+  navInd.style.width = li.offsetWidth + 'px';
+  navInd.style.transform = `translateX(${li.offsetLeft}px)`;
+  navInd.style.opacity = 1;
+}
+const currentLink = () => navLinks.find(a => a.hasAttribute('aria-current'));
 const spy = new IntersectionObserver(entries => {
-  for (const e of entries) if (e.isIntersecting)
+  for (const e of entries) if (e.isIntersecting) {
     navLinks.forEach(a => a.toggleAttribute('aria-current', a.getAttribute('href') === '#' + e.target.id));
+    placeNavInd(currentLink());
+  }
 }, { rootMargin: '-45% 0px -50% 0px' });
 document.querySelectorAll('section[id]').forEach(s => spy.observe(s));
+// leaving the sections (back in the hero) clears the highlight
+new IntersectionObserver(([e]) => {
+  if (e.isIntersecting) { navLinks.forEach(a => a.removeAttribute('aria-current')); placeNavInd(null); }
+}, { rootMargin: '-45% 0px -50% 0px' }).observe(document.querySelector('.hero'));
+navLinks.forEach(a => a.addEventListener('pointerenter', () => placeNavInd(a)));
+document.querySelector('nav ul').addEventListener('pointerleave', () => placeNavInd(currentLink()));
+addEventListener('resize', () => placeNavInd(currentLink()));
 
-// ---------- 16-QAM constellation ----------
+
+// ---------- QAM constellation lab ----------
 const canvas = document.getElementById('qam');
 const frame = document.getElementById('frame');
 const slider = document.getElementById('snr');
 const out = document.getElementById('snrval');
+const serOut = document.getElementById('serval');
+const evmOut = document.getElementById('evmval');
+const modTag = document.getElementById('modtag');
+const scopeName = document.getElementById('scopename');
+const gridCanvas = document.getElementById('qam-grid');
+const gctx = gridCanvas.getContext('2d');
 const ctx = canvas.getContext('2d');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const levels = [-3, -1, 1, 3];
-const Es = 10;                      // average symbol energy of 16-QAM on ±1, ±3
-const N = 1400;                     // points kept on screen
-let snrDb = 18, pts = [], w = 0, h = 0, dpr = 1, colors = {};
+const N = 1600;                     // points kept on screen
+let M = 16, k = 4, levels = [], qLevels = [], pam = false, Es = 10, histMax = 0, avgAll = null, avgOk = null;
+let gridDirty = true;
+let snrDb = 18, snrTarget = 18, pts = [], w = 0, h = 0, dpr = 1, colors = {};
+
+// levels on odd integers: ±1, ±3, …
+// square M-QAM uses them on both axes, Es = 2(M-1)/3; M-PAM only on I, Es = (M²-1)/3
+function setMod(m, isPam = false) {
+  M = m; pam = isPam; k = pam ? M : Math.sqrt(M);
+  Es = pam ? (M * M - 1) / 3 : 2 * (M - 1) / 3;
+  levels = Array.from({ length: k }, (_, i) => 2 * i - (k - 1));
+  qLevels = pam ? [0] : levels;
+  pts = Array.from({ length: N }, sample);
+  modTag.textContent = pam ? (M === 2 ? 'NRZ' : `PAM${M}`) : M === 4 ? 'QPSK' : `${M}-QAM`;
+  scopeName.textContent = pam ? 'Histogram · CH1' : 'Constellation · CH1';
+  histMax = 0; avgAll = avgOk = null;
+  gridDirty = true;
+  if (reduce) draw();
+}
 
 // canvas colours come from the CSS theme tokens
 function readColors() {
   const cs = getComputedStyle(root), v = n => cs.getPropertyValue(n).trim();
-  colors = { grid: v('--rule'), label: v('--muted'), dot: v('--qam-dot'), ideal: v('--qam-ideal'), glow: !isLight() };
+  gridDirty = true;
+  colors = { grid: v('--rule'), label: v('--muted'), dot: v('--qam-dot'), ideal: v('--qam-ideal'), err: v('--qam-err'), glow: !isLight() };
 }
 
 function gauss() { // Box-Muller
   let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
-function sigma() { return Math.sqrt(Es / (2 * Math.pow(10, snrDb / 10))); }
-function sample() {
-  const s = sigma();
-  return { x: levels[Math.random() * 4 | 0], y: levels[Math.random() * 4 | 0], nx: gauss(), ny: gauss(), s };
-}
+// complex QAM splits the noise power over I and Q; real-valued PAM has all of it on I
+function sigma() { return Math.sqrt(Es / ((pam ? 1 : 2) * Math.pow(10, snrDb / 10))); }
+function sample() { return { i: Math.random() * k | 0, q: Math.random() * qLevels.length | 0, nx: gauss(), ny: gauss() }; }
+// nearest-level decision on one axis
+function decide(v) { return Math.max(0, Math.min(k - 1, Math.round((v + k - 1) / 2))); }
+
 function resize() {
   dpr = Math.min(devicePixelRatio || 1, 2);
   const r = canvas.getBoundingClientRect(); w = r.width; h = r.height;
-  canvas.width = w * dpr; canvas.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const [c, cx2] of [[canvas, ctx], [gridCanvas, gctx]]) {
+    c.width = w * dpr; c.height = h * dpr; cx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  gridDirty = true;
   draw();
 }
+function geom() {
+  // PAM's axis sits near the bottom (room for the sample strip and HUD) so the histogram gets the height
+  return { cx: w / 2, cy: pam ? h - 92 : h / 2, ext: k + 0.3, scale: Math.min(w, h) / (2 * k + 1.8) };
+}
+
+// static layer: graph paper faded toward the edges, I/Q axes with level labels
+function drawGrid() {
+  gridDirty = false;
+  const { cx, cy, ext, scale } = geom(), g = gctx;
+  g.clearRect(0, 0, w, h);
+  // minor lines every half level, major ones on the decision boundaries
+  const span = Math.ceil(Math.max(w, h) / scale / 2) + 1;
+  g.strokeStyle = colors.grid; g.lineWidth = 1;
+  for (let v = -span; v <= span; v += 0.5) {
+    g.globalAlpha = v % 2 === 0 ? 1 : 0.5;
+    const x = Math.round(cx + v * scale) + 0.5, y = Math.round(cy - v * scale) + 0.5;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
+  }
+  g.globalAlpha = 1;
+  const fade = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.62);
+  fade.addColorStop(0, '#000'); fade.addColorStop(0.55, 'rgba(0,0,0,0.7)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+  g.globalCompositeOperation = 'destination-in'; g.fillStyle = fade; g.fillRect(0, 0, w, h);
+  g.globalCompositeOperation = 'source-over';
+  // axes
+  g.strokeStyle = colors.label; g.globalAlpha = 0.45;
+  g.beginPath(); g.moveTo(cx - ext * scale, cy + 0.5); g.lineTo(cx + ext * scale, cy + 0.5);
+  if (!pam) { g.moveTo(cx + 0.5, cy - ext * scale); g.lineTo(cx + 0.5, cy + ext * scale); }
+  g.stroke();
+  g.fillStyle = colors.label; g.font = '500 10px "JetBrains Mono", monospace';
+  const shown = v => k < 8 || Math.abs(v) % 4 === 3;
+  for (const v of levels) {
+    g.beginPath(); g.moveTo(cx + v * scale, cy - 4); g.lineTo(cx + v * scale, cy + 4);
+    if (!pam) { g.moveTo(cx - 4, cy - v * scale); g.lineTo(cx + 4, cy - v * scale); }
+    g.stroke();
+  }
+  if (pam) {   // PAM decides on I alone: dashed thresholds between the levels
+    g.save(); g.setLineDash([3, 5]); g.globalAlpha = 0.6;
+    for (let b = -(k - 2); b <= k - 2; b += 2) {
+      g.beginPath(); g.moveTo(cx + b * scale + 0.5, 44); g.lineTo(cx + b * scale + 0.5, cy + 34); g.stroke();
+    }
+    g.restore();
+  }
+  g.textAlign = 'center'; g.textBaseline = 'top';
+  for (const v of levels) if (shown(v)) g.fillText(v, cx + v * scale, cy + 7);
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  if (!pam) for (const v of levels) if (shown(v)) g.fillText(v, cx - 7, cy - v * scale);
+  g.globalAlpha = 0.8; g.font = '600 11px "JetBrains Mono", monospace';
+  g.textAlign = 'left'; g.fillText('I', cx + ext * scale + 6, cy);
+  if (!pam) { g.textAlign = 'center'; g.textBaseline = 'bottom'; g.fillText('Q', cx, cy - ext * scale - 6); }
+  g.globalAlpha = 1;
+}
+
 // noise stored unit-normal so changing SNR rescales every point instantly
+let statFrame = 0;
+function dots(list, r) {   // list = [x0, y0, x1, y1, …] in pixels
+  ctx.beginPath();
+  for (let j = 0; j < list.length; j += 2) { ctx.moveTo(list[j] + r, list[j + 1]); ctx.arc(list[j], list[j + 1], r, 0, 6.283); }
+  ctx.fill();
+}
 function draw() {
-  const s = sigma(), scale = Math.min(w, h) / 10, cx = w / 2, cy = h / 2 + 8;
-  ctx.clearRect(0, 0, w, h);
-  // decision boundaries
-  ctx.strokeStyle = colors.grid; ctx.lineWidth = 1;
-  for (const b of [-2, 0, 2]) {
-    ctx.beginPath(); ctx.moveTo(cx + b * scale, cy - 4.3 * scale); ctx.lineTo(cx + b * scale, cy + 4.3 * scale); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx - 4.3 * scale, cy + b * scale); ctx.lineTo(cx + 4.3 * scale, cy + b * scale); ctx.stroke();
+  if (gridDirty) drawGrid();
+  const s = sigma(), { cx, cy, scale } = geom();
+  // phosphor persistence: the previous frame fades instead of vanishing
+  if (reduce || pam) ctx.clearRect(0, 0, w, h);   // the histogram averages over time instead
+  else {
+    ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.fillRect(0, 0, w, h);
   }
-  ctx.fillStyle = colors.label; ctx.font = '500 12px "JetBrains Mono", monospace';
-  ctx.fillText('I', cx + 4.3 * scale + 6, cy + 4); ctx.fillText('Q', cx - 4, cy - 4.3 * scale - 8);
-  // received symbols; additive blending in dark mode makes dense clusters glow
-  ctx.fillStyle = colors.dot;
-  if (colors.glow) ctx.globalCompositeOperation = 'lighter';
+  // received symbols: correct ones in the theme colour, wrong decisions in coral
+  const r = k >= 8 ? 1.2 : M === 4 && !pam ? 1.8 : 1.5;
+  let errors = 0, noise = 0;
+  const ok = [], bad = [];
+  const lo = -cx / scale, nb = 240, bw = -2 * lo / nb;   // PAM density on a fine grid across the full width
+  // kernel density estimate: each sample adds a small Gaussian, sized to the noise so shapes stay true (≈5% wider)
+  const kh = Math.max(1.5 * bw, 0.32 * s), kr = Math.ceil(3 * kh / bw);   // Silverman's rule for ~400 samples per level
+  const kern = pam ? Array.from({ length: 2 * kr + 1 }, (_, j) => Math.exp(-0.5 * ((j - kr) * bw / kh) ** 2)) : null;
+  const hOk = pam ? new Float32Array(nb) : null, hAll = pam ? new Float32Array(nb) : null;
   for (const p of pts) {
-    ctx.beginPath();
-    ctx.arc(cx + (p.x + p.nx * s) * scale, cy - (p.y + p.ny * s) * scale, 1.7, 0, 6.283);
-    ctx.fill();
+    const x = levels[p.i] + p.nx * s;
+    if (pam) {   // one real dimension: noise on I only
+      noise += p.nx * p.nx * s * s;
+      const wrong = decide(x) !== p.i;
+      if (wrong) errors++;
+      const bi = Math.round((x - lo) / bw);
+      for (let j = -kr; j <= kr; j++) {
+        const t = bi + j;
+        if (t < 0 || t >= nb) continue;
+        hAll[t] += kern[j + kr]; if (!wrong) hOk[t] += kern[j + kr];
+      }
+      // rug of individual samples under the axis (vertical spread is only for visibility)
+      (wrong ? bad : ok).push(cx + x * scale, cy + 16 + Math.max(-2, Math.min(2, p.ny)) * 4);
+      continue;
+    }
+    const y = qLevels[p.q] + p.ny * s;
+    noise += (p.nx * p.nx + p.ny * p.ny) * s * s;
+    const wrong = decide(x) !== p.i || decide(y) !== p.q;
+    if (wrong) errors++;
+    (wrong ? bad : ok).push(cx + x * scale, cy - y * scale);
   }
-  ctx.globalCompositeOperation = 'source-over';
-  // ideal points
-  ctx.strokeStyle = colors.ideal; ctx.lineWidth = 1.5;
-  for (const x of levels) for (const y of levels) {
-    ctx.beginPath(); ctx.arc(cx + x * scale, cy - y * scale, 4, 0, 6.283); ctx.stroke();
+  if (pam) {
+    // amplitude histogram: total in coral underneath, correct decisions in the theme colour on top,
+    // so the coral that shows is the part of each hump that spilled across a threshold
+    // running average across frames, so the humps settle instead of flickering
+    if (!avgAll || avgAll.length !== nb) { avgAll = hAll.slice(); avgOk = hOk.slice(); }
+    const a = reduce ? 1 : 0.12;
+    for (let i = 0; i < nb; i++) { avgAll[i] += (hAll[i] - avgAll[i]) * a; avgOk[i] += (hOk[i] - avgOk[i]) * a; }
+    hAll.set(avgAll); hOk.set(avgOk);
+    let peak = 0; for (const v of hAll) peak = Math.max(peak, v);
+    histMax = Math.max(peak, histMax * 0.98);   // slow-moving scale so the plot doesn't jump
+    const H = (cy - 64) / histMax;
+    const X = i => cx + (lo + (i + 0.5) * bw) * scale;
+    const curve = (hist, from, to, step) => {   // quadratic segments through midpoints, so no corners show
+      for (let i = from; i !== to; i += step) {
+        const j = i + step, mx = (X(i) + X(j)) / 2, my = cy - (hist[i] + hist[j]) / 2 * H;
+        ctx.quadraticCurveTo(X(i), cy - hist[i] * H, mx, my);
+      }
+      ctx.lineTo(X(to), cy - hist[to] * H);
+    };
+    ctx.globalCompositeOperation = 'source-over';
+    // correct decisions: filled hump with a glowing outline
+    ctx.beginPath(); ctx.moveTo(X(0), cy); ctx.lineTo(X(0), cy - hOk[0] * H);
+    curve(hOk, 0, nb - 1, 1);
+    ctx.lineTo(X(nb - 1), cy); ctx.closePath();
+    const grad = ctx.createLinearGradient(0, 64, 0, cy);
+    grad.addColorStop(0, colors.dot); grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.35; ctx.fillStyle = grad; ctx.fill();
+    ctx.globalAlpha = 1; ctx.strokeStyle = colors.dot; ctx.lineWidth = 1.5; ctx.stroke();
+    // errors: the band between the correct curve and the total, i.e. what spilled across a threshold
+    ctx.beginPath(); ctx.moveTo(X(0), cy - hAll[0] * H);
+    curve(hAll, 0, nb - 1, 1);
+    ctx.lineTo(X(nb - 1), cy - hOk[nb - 1] * H);
+    curve(hOk, nb - 1, 0, -1);
+    ctx.closePath(); ctx.globalAlpha = 0.85; ctx.fillStyle = colors.err; ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.dot; dots(ok, 1.1);
+    ctx.fillStyle = colors.err; dots(bad, 1.3);
+  } else {
+    ctx.globalCompositeOperation = colors.glow ? 'lighter' : 'source-over';
+    if (colors.glow) {   // soft halo under each dot
+      ctx.globalAlpha = 0.07;
+      ctx.fillStyle = colors.dot; dots(ok, r * 3.2);
+      ctx.fillStyle = colors.err; dots(bad, r * 3.2);
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = colors.dot; dots(ok, r);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = colors.err; dots(bad, r + 0.4);
+  }
+  // ideal points: a ring with four reticle ticks
+  ctx.strokeStyle = colors.ideal; ctx.lineWidth = k >= 8 ? 1 : 1.4;
+  const ring = k >= 8 ? 2.6 : 4, t0 = ring + 2, t1 = ring + (k >= 8 ? 4 : 6);
+  ctx.beginPath();
+  for (const lx of levels) for (const ly of qLevels) {
+    const x = cx + lx * scale, y = cy - ly * scale;
+    ctx.moveTo(x + ring, y); ctx.arc(x, y, ring, 0, 6.283);
+    if (k < 8) {
+      ctx.moveTo(x - t1, y); ctx.lineTo(x - t0, y); ctx.moveTo(x + t0, y); ctx.lineTo(x + t1, y);
+      ctx.moveTo(x, y - t1); ctx.lineTo(x, y - t0); ctx.moveTo(x, y + t0); ctx.lineTo(x, y + t1);
+    }
+  }
+  ctx.stroke();
+  // live readouts (throttled so the numbers are readable)
+  if (statFrame++ % 8 === 0 || reduce) {
+    const ser = errors / pts.length * 100, evm = Math.sqrt(noise / pts.length / Es) * 100;
+    serOut.textContent = errors === 0 ? '0' : ser < 0.1 ? '<0.1' : ser < 10 ? ser.toFixed(1) : Math.round(ser);
+    evmOut.textContent = evm < 10 ? evm.toFixed(1) : Math.round(evm);
   }
 }
+// controls set a target; the displayed SNR glides toward it each frame
+let dragging = false;
 function setSnr(v) {
-  snrDb = Math.max(0, Math.min(30, v));
-  slider.value = snrDb; out.textContent = (Math.round(snrDb * 2) / 2).toString();
-  if (reduce) draw();
+  snrTarget = Math.max(0, Math.min(30, v));
+  if (reduce) { snrDb = snrTarget; showSnr(); draw(); }
 }
-for (let i = 0; i < N; i++) pts.push(sample());
+function showSnr() {
+  if (!dragging) slider.value = snrDb;
+  out.textContent = snrDb.toFixed(1);
+  slider.style.setProperty('--p', `${snrDb / 30 * 100}%`);
+}
 
 let touched = false;
 slider.addEventListener('input', () => { touched = true; setSnr(+slider.value); });
+slider.addEventListener('pointerdown', () => { dragging = true; });
+addEventListener('pointerup', () => { dragging = false; });
 function fromPointer(e) {
   const r = frame.getBoundingClientRect();
   touched = true; setSnr(((e.clientX - r.left) / r.width) * 30);
@@ -108,18 +324,36 @@ function fromPointer(e) {
 frame.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) fromPointer(e); });
 frame.addEventListener('pointerdown', e => { frame.setPointerCapture(e.pointerId); fromPointer(e); });
 
+// modulation switch and SNR presets
+document.querySelectorAll('[data-mod]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-mod]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  setMod(+b.dataset.mod, 'pam' in b.dataset);
+}));
+document.querySelectorAll('[data-snr]').forEach(b => b.addEventListener('click', () => { touched = true; setSnr(+b.dataset.snr); }));
+
 // live stream: replace a slice of points each frame; drift SNR until someone interacts
 let t0 = performance.now();
 function tick(t) {
   for (let i = 0; i < 40; i++) pts[(Math.random() * N) | 0] = sample();
   if (!touched) setSnr(15 + 9 * Math.sin((t - t0) / 2600));
+  snrDb += (snrTarget - snrDb) * 0.14;   // ease toward the target
+  if (Math.abs(snrTarget - snrDb) < 0.01) snrDb = snrTarget;
+  showSnr();
   draw();
-  requestAnimationFrame(tick);
+  if (onScreen) requestAnimationFrame(tick); else running = false;
+}
+// only animate while the plot is on screen, so scrolling elsewhere stays smooth
+let onScreen = true, running = false;
+function start() { if (!running && !reduce) { running = true; requestAnimationFrame(tick); } }
+if ('IntersectionObserver' in window) {
+  new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; if (onScreen) start(); }).observe(frame);
 }
 addEventListener('resize', resize);
 readColors();
+setMod(16);
+showSnr();
 resize();
-if (!reduce) requestAnimationFrame(tick);
+start();
 
 // ---------- lightbox for gallery photos and project figures ----------
 // links still point at the full image, so everything works without JS too
@@ -161,24 +395,221 @@ lb.addEventListener('touchend', e => {
 });
 lb.addEventListener('close', () => { lbImg.removeAttribute('src'); });
 
-// ---------- gallery: lay photos out row by row (newest across the top) ----------
-// CSS columns fill top-to-bottom, so we deal photos into the shortest column instead.
+// ---------- gallery: mosaic of mixed tile sizes (newest first) ----------
+// rows are half a column tall, so each photo gets a tile close to its own shape:
+// square 1×2, portrait 1×3, landscape 2×3, wide 2×2; every few photos one becomes a big feature.
+// Dense packing fills the gaps, which gives the collage look. The lightbox shows the full photo.
 const gallery = document.querySelector('.gallery');
 const photos = [...gallery.querySelectorAll('a')];
-let galleryCols = 0;
+let galleryW = 0;
 function layoutGallery() {
-  const w = gallery.clientWidth, n = w >= 900 ? 4 : w >= 560 ? 3 : 2;
-  if (n === galleryCols) return;
-  galleryCols = n;
-  const cols = Array.from({ length: n }, () => { const c = document.createElement('div'); c.className = 'gcol'; return c; });
-  const heights = new Array(n).fill(0);
-  for (const a of photos) {
-    const img = a.querySelector('img'), i = heights.indexOf(Math.min(...heights));
-    cols[i].appendChild(a);
-    heights[i] += img.getAttribute('height') / img.getAttribute('width');   // known from the markup, no need to wait for loading
+  const W = gallery.clientWidth;
+  if (!W || W === galleryW) return;
+  galleryW = W;
+  const gap = 12, cols = W >= 900 ? 4 : W >= 560 ? 3 : 2;
+  const colW = (W - gap * (cols - 1)) / cols, unit = (colW - gap) / 2;   // two units + a gap = one square cell
+  gallery.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  gallery.style.gridAutoRows = `${unit}px`;
+  // skyline packing: each photo goes into the lowest open spot and narrows to fit. Tile sizes are
+  // picked at random from shapes that suit the photo; for each width we try many seeded layouts and
+  // keep the one with no empty space and the least stretching, so it looks random but stays the same.
+  const ars = photos.map(a => { const img = a.querySelector('img'); return img.getAttribute('width') / img.getAttribute('height'); });
+  const shapes = ar =>   // [columns, rows, weight]
+    ar < 0.9 ? [[1, 3, 5], [1, 4, 3], [2, 5, 1]] :             // portrait: tall, extra tall, big
+    ar < 1.15 ? [[1, 2, 6], [2, 4, 1]] :                        // square: small, big
+    ar < 1.5 ? [[2, 3, 5], [2, 2, 2], [3, 4, 1]] :              // 4:3 landscape: regular, short, big
+    [[2, 2, 5], [3, 3, 1]];                                     // 16:9 wide: regular, big
+  const pack = rand => {
+    const colH = new Array(cols).fill(0), tiles = [];
+    ars.forEach((ar, i) => {
+      const y = Math.min(...colH), x = colH.indexOf(y);
+      let room = 0; while (x + room < cols && colH[x + room] === y) room++;   // flat run at that height
+      const opts = shapes(ar).filter(([c, r]) => i >= 4 || c * r <= 6);   // no big tiles right at the top
+      let pick = rand() * opts.reduce((t, o) => t + o[2], 0), c, r;
+      for (const o of opts) { if ((pick -= o[2]) <= 0) { [c, r] = o; break; } }
+      if (c === undefined) [c, r] = opts[0];
+      if (c > room) [c, r] = [room, Math.max(2, Math.round(r * room / c))];   // narrow gap: shrink, keep the shape
+      for (let j = x; j < x + c; j++) colH[j] = y + r;
+      tiles.push({ a: photos[i], x, y, c, r });
+    });
+    // straight bottom edge: stretch the last tile in each column down to the deepest column
+    const H = Math.max(...colH);
+    let stretch = 0;
+    for (const t of tiles) {
+      const bottom = t.y + t.r, cs = colH.slice(t.x, t.x + t.c);
+      if (cs.every(v => v === bottom) && bottom < H) { stretch += H - bottom; t.r += H - bottom; for (let j = t.x; j < t.x + t.c; j++) colH[j] = H; }
+    }
+    const holes = colH.reduce((t, v) => t + H - v, 0);
+    return { tiles, score: holes * 1000 + stretch };
+  };
+  const seeded = seed => () => {   // mulberry32
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  let best = null;
+  for (let seed = 1; seed <= 120; seed++) {
+    const p = pack(seeded(seed + cols * 1000));
+    if (!best || p.score < best.score) best = p;
+    if (best.score === 0) break;
   }
-  gallery.replaceChildren(...cols);
-  gallery.classList.add('masonry');
+  const tiles = best.tiles;
+  for (const { a, x, y, c, r } of tiles) {
+    a.style.gridColumn = `${x + 1} / span ${c}`;
+    a.style.gridRow = `${y + 1} / span ${r}`;
+  }
+  const peekRows = cols >= 4 ? 3.2 : cols === 3 ? 3.6 : 4.2;   // narrower screens show more rows before the fade
+  gallery.style.setProperty('--peek', `${Math.round(colW * peekRows)}px`);
+  gallery.classList.add('mosaic');
 }
 layoutGallery();
 addEventListener('resize', layoutGallery);
+
+// each photo glows in its own average colour on hover
+const swatch = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+function tint(img) {
+  try {
+    swatch.drawImage(img, 0, 0, 1, 1);
+    let [r, g, b] = swatch.getImageData(0, 0, 1, 1).data;
+    const avg = (r + g + b) / 3;
+    [r, g, b] = [r, g, b].map(c => avg + (c - avg) * 2.2);   // averages come out greyish: push the colour
+    const m = Math.max(r, g, b, 1), k = Math.min(1.6, 220 / m);   // lift dark photos so the glow stays visible
+    [r, g, b] = [r, g, b].map(c => Math.round(Math.max(0, Math.min(255, c * k))));
+    img.closest('a').style.setProperty('--tint', `rgb(${r} ${g} ${b})`);
+  } catch { /* unreadable image: keep the default cyan */ }
+}
+for (const a of photos) {
+  const img = a.querySelector('img');
+  if (img.complete && img.naturalWidth) tint(img); else img.addEventListener('load', () => tint(img), { once: true });
+}
+
+// gentle tilt toward the cursor
+if (!reduce) for (const a of photos) {
+  a.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    const r = a.getBoundingClientRect();
+    a.style.setProperty('--ry', `${((e.clientX - r.left) / r.width - 0.5) * 7}deg`);
+    a.style.setProperty('--rx', `${(0.5 - (e.clientY - r.top) / r.height) * 7}deg`);
+  });
+  a.addEventListener('pointerleave', () => { a.style.setProperty('--rx', '0deg'); a.style.setProperty('--ry', '0deg'); });
+}
+
+// show a couple of rows first; the rest unfold on request
+const more = document.querySelector('.more');
+if (photos.length > 12) {
+  gallery.classList.add('collapsed');
+  more.hidden = false;
+  const label = () => { more.textContent = gallery.classList.contains('collapsed') ? 'Show more' : 'Show less'; };
+  label();
+  more.addEventListener('click', () => {
+    const open = gallery.classList.contains('collapsed');
+    if (open) {
+      gallery.style.maxHeight = gallery.scrollHeight + 'px';   // animate to the full height, then let it go
+      gallery.classList.remove('collapsed');
+      const done = e => {   // ignore the photos' own hover transitions
+        if (e && (e.target !== gallery || e.propertyName !== 'max-height')) return;
+        gallery.removeEventListener('transitionend', done); clearTimeout(t);
+        gallery.style.maxHeight = ''; gallery.classList.add('open');
+      };
+      gallery.addEventListener('transitionend', done);
+      const t = setTimeout(done, 1000);   // in case the transition never reports back
+    } else {
+      gallery.style.maxHeight = gallery.scrollHeight + 'px';
+      gallery.classList.remove('open');
+      void gallery.offsetHeight;
+      gallery.style.maxHeight = '';
+      gallery.classList.add('collapsed');
+      gallery.closest('section').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+    }
+    more.setAttribute('aria-expanded', open);
+    label();
+  });
+}
+setupRise();
+
+// ---------- tabbed groups (projects, experience) with a sliding highlight ----------
+document.querySelectorAll('.exp').forEach(box => {
+  const tabs = [...box.querySelectorAll('.tab')];
+  const tabInd = box.querySelector('.tab-ind');
+  const moveTabInd = tab => {
+    tabInd.style.width = tab.offsetWidth + 'px';
+    tabInd.style.transform = `translateX(${tab.offsetLeft}px)`;
+  };
+  const current = () => tabs.find(t => t.getAttribute('aria-selected') === 'true');
+  function selectTab(tab, animate = true) {
+    const from = box.offsetHeight;
+    tabs.forEach(t => {
+      const on = t === tab, panel = document.getElementById(t.getAttribute('aria-controls'));
+      t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
+      panel.hidden = !on;
+      panel.classList.remove('enter');
+      if (on && animate) { void panel.offsetWidth; panel.classList.add('enter'); }
+    });
+    moveTabInd(tab);
+    if (animate && !reduce) {   // ease the box to its new height instead of jumping
+      const to = box.offsetHeight;
+      box.style.overflow = 'hidden';   // clip only while resizing, so hover shadows aren't cut off
+      box.animate([{ height: from + 'px' }, { height: to + 'px' }], { duration: 350, easing: 'cubic-bezier(.3,.7,.2,1)' })
+        .finished.then(() => { box.style.overflow = ''; });
+      clearTimeout(box._t); box._t = setTimeout(() => { box.style.overflow = ''; }, 450);   // safety net
+    }
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => selectTab(t));
+    t.addEventListener('keydown', e => {   // arrow keys move between tabs
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      const next = tabs[(i + d + tabs.length) % tabs.length]; next.focus(); selectTab(next);
+    });
+  });
+  selectTab(tabs[0], false);
+  // first time the group scrolls into view, play the entrance for the open tab
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+    obs.disconnect();
+    box.querySelector('.exp-panel:not([hidden])').classList.add('enter');
+  }, { threshold: 0.15 });
+  obs.observe(box);
+  addEventListener('resize', () => moveTabInd(current()));
+  document.fonts && document.fonts.ready.then(() => moveTabInd(current()));
+});
+
+// spotlight + slight 3D tilt: the card follows the cursor
+document.querySelectorAll('.fx').forEach(card => {
+  card.addEventListener('pointermove', e => {
+    const r = card.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    card.style.setProperty('--mx', `${x}px`);
+    card.style.setProperty('--my', `${y}px`);
+    if (!reduce && e.pointerType === 'mouse' && !card.classList.contains('lab')) {   // no tilt on the lab, so dragging the plot stays steady
+      const k = 6 * Math.min(1, 420 / r.width);   // wide panels tilt less
+      card.style.setProperty('--ry', `${(x / r.width - 0.5) * k}deg`);
+      card.style.setProperty('--rx', `${(0.5 - y / r.height) * k}deg`);
+    }
+  });
+  card.addEventListener('pointerleave', () => { card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg'); });
+});
+
+// portrait: gentle tilt toward the cursor
+const portrait = document.querySelector('.portrait');
+if (!reduce) {
+  portrait.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    const r = portrait.getBoundingClientRect();
+    portrait.style.setProperty('--ry', `${((e.clientX - r.left) / r.width - 0.5) * 8}deg`);
+    portrait.style.setProperty('--rx', `${(0.5 - (e.clientY - r.top) / r.height) * 8}deg`);
+  });
+  portrait.addEventListener('pointerleave', () => { portrait.style.setProperty('--rx', '0deg'); portrait.style.setProperty('--ry', '0deg'); });
+}
+
+// hero kicker: rotate through a few short facts
+const rot = [...document.querySelectorAll('.rot > span')];
+if (!reduce && rot.length > 1) {
+  let ri = 0;
+  setInterval(() => {
+    const cur = rot[ri]; ri = (ri + 1) % rot.length; const nxt = rot[ri];
+    cur.classList.remove('on'); cur.classList.add('out');
+    nxt.classList.remove('out'); nxt.classList.add('on');
+    setTimeout(() => cur.classList.remove('out'), 600);
+  }, 3200);
+}
