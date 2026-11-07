@@ -146,7 +146,8 @@ nav a[aria-current="true"] { color: var(--ink); background: var(--surface-hi); }
 h1 {
   font: 700 clamp(3.4rem, 9.5vw, 7.75rem)/0.9 var(--sans);
   letter-spacing: -0.045em;
-  margin: 0 0 28px;
+  margin: 0 0 calc(28px - 0.14em);
+  padding-bottom: 0.14em;   /* room for the "y" descender, which background-clip would otherwise cut off */
   background: linear-gradient(135deg, var(--ink) 30%, var(--accent) 72%, var(--accent-2));
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
