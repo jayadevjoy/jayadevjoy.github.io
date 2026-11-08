@@ -816,7 +816,7 @@ canvas#qam, canvas#qam-grid { position: absolute; inset: 0; width: 100%; height:
 .mailbox {
   display: flex; align-items: center; gap: 12px; max-width: 460px;
   padding: 8px 8px 8px 16px; border-radius: 16px; border: 1px solid var(--rule);
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
   transition: border-color .25s, box-shadow .25s;
 }
 .mailbox:hover { border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -837,7 +837,7 @@ canvas#qam, canvas#qam-grid { position: absolute; inset: 0; width: 100%; height:
 .links a {
   position: relative; display: flex; flex-direction: column; gap: 2px; padding: 18px; border-radius: 16px;
   text-decoration: none; color: var(--ink);
-  border: 1px solid var(--rule); background: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  border: 1px solid var(--rule); background: color-mix(in srgb, var(--bg-2) 72%, transparent);
   -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);   /* frosted, so the rings blur away behind it */
   transition: border-color .25s, background-color .25s, transform .25s;
 }
