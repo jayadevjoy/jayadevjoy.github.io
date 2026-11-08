@@ -8,6 +8,19 @@
 </script>
 <title>Jayadev Joy · Wireless communications, NYU</title>
 <meta name="description" content="Jayadev Joy is a PhD student in Electrical and Computer Engineering at NYU Wireless, working on wireless communications, ray tracing and statistical signal processing.">
+<link rel="icon" href="images/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="images/favicon.png">
+<meta name="theme-color" content="#07080F">
+<link rel="canonical" href="https://jayadevjoy.github.io/">
+<!-- link previews (LinkedIn, Slack, WhatsApp, iMessage, X) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jayadevjoy.github.io/">
+<meta property="og:title" content="Jayadev Joy · PhD student, NYU Wireless">
+<meta property="og:description" content="Getting clean signals out of noisy, distorted observations. Research, projects and photos.">
+<meta property="og:image" content="https://jayadevjoy.github.io/images/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -43,7 +56,7 @@
       <div class="hero-text">
         <p class="kicker"><span class="rot" aria-live="off">
           <span class="on">PhD · NYU Wireless</span>
-          <span>DSP intern · Marvell</span>
+          <span>DCE DSP · Marvell</span>
           <span>Alum · IIT Madras</span>
         </span></p>
         <h1><span class="n1">Jayadev</span><span class="n2">Joy</span></h1>
@@ -64,7 +77,7 @@
           <img src="images/portrait.jpg" alt="Jayadev Joy sitting on a rock above a lake" width="900" height="1200">
         </div>
         <figcaption class="chip chip-a"><span class="dot"></span>Wireless · Signal processing · ML</figcaption>
-        <div class="chip chip-b" aria-hidden="true">NYU Tandon · Brooklyn</div>
+        <div class="chip chip-b" aria-hidden="true">NYU Wireless · Brooklyn</div>
       </figure>
     </div>
     <a class="scroll-cue" href="#about" aria-label="Scroll to About"><span></span></a>
@@ -125,21 +138,22 @@
         <p>Algorithms that pull signals back out of noise and distortion.</p>
       </header>
 
-      <div class="lab">
+      <div class="lab fx">
         <div class="lab-text">
           <h3 class="label">Try it</h3>
-          <p class="lab-title">This is what noise does to a signal.</p>
+          <p class="lab-title">What does noise do to a signal?</p>
           <p>Each dot is a received symbol; the rings are where they should land. Drag across the plot or move the slider to change the signal-to-noise ratio. Once the clouds overlap, symbols get decoded wrong.</p>
           <div class="seg" role="group" aria-label="Modulation">
+            <span class="seg-ind" aria-hidden="true"></span>
             <button type="button" data-mod="2" data-pam aria-pressed="false">NRZ</button>
             <button type="button" data-mod="4" data-pam aria-pressed="false">PAM4</button>
             <button type="button" data-mod="8" data-pam aria-pressed="false">PAM8</button>
             <i class="seg-div" aria-hidden="true"></i>
             <button type="button" data-mod="4" aria-pressed="false">QPSK</button>
-            <button type="button" data-mod="16" aria-pressed="true">16-QAM</button>
-            <button type="button" data-mod="64" aria-pressed="false">64-QAM</button>
+            <button type="button" data-mod="16" aria-pressed="true">16QAM</button>
+            <button type="button" data-mod="64" aria-pressed="false">64QAM</button>
           </div>
-          <dl class="meters" aria-live="polite">
+          <dl class="meters">
             <div><dt>SNR</dt><dd><b id="snrval">18</b><span>dB</span></dd></div>
             <div><dt title="Symbol error rate">SER</dt><dd><b id="serval">0</b><span>%</span></dd></div>
             <div><dt title="Error vector magnitude">EVM</dt><dd><b id="evmval">0</b><span>%</span></dd></div>
@@ -148,9 +162,9 @@
             <input type="range" id="snr" min="0" max="30" step="0.1" value="18" aria-label="Signal-to-noise ratio in decibels">
           </div>
           <div class="presets">
-            <button type="button" data-snr="25">Clean · 25 dB</button>
-            <button type="button" data-snr="12">Noisy · 12 dB</button>
             <button type="button" data-snr="4">Harsh · 4 dB</button>
+            <button type="button" data-snr="12">Noisy · 12 dB</button>
+            <button type="button" data-snr="25">Clean · 25 dB</button>
           </div>
         </div>
         <div class="scope-frame" id="frame">
@@ -160,7 +174,7 @@
             <div class="hud" aria-hidden="true">
             <span class="tl" id="scopename">Constellation · CH1</span>
             <span class="tr live">LIVE</span>
-            <span class="bl"><b id="modtag">16-QAM</b> · AWGN</span>
+            <span class="bl"><b id="modtag">16QAM</b> · AWGN</span>
             <span class="br legend"><i class="ok"></i>decoded <i class="bad"></i>error</span>
           </div>
         </div>
@@ -168,18 +182,18 @@
 
       <div class="exp proj">
         <div class="tabs" role="tablist" aria-label="Project type">
-          <button class="tab" type="button" role="tab" id="tab-research" aria-controls="proj-research" aria-selected="true">Research projects <span class="count">4</span></button>
-          <button class="tab" type="button" role="tab" id="tab-course" aria-controls="proj-course" aria-selected="false">Course projects <span class="count">6</span></button>
+          <button class="tab" type="button" role="tab" id="tab-research" aria-controls="proj-research" aria-selected="true">Research <span class="count">4</span></button>
+          <button class="tab" type="button" role="tab" id="tab-course" aria-controls="proj-course" aria-selected="false">Coursework <span class="count">6</span></button>
           <span class="tab-ind" aria-hidden="true"></span>
         </div>
         <div class="exp-panel" id="proj-research" role="tabpanel" aria-labelledby="tab-research">
-          <h3 class="label panel-label">Research projects</h3>
+          <h3 class="label panel-label">Research</h3>
           <div class="cards two">
             <article class="card fx">
               <span class="idx" aria-hidden="true">01</span>
               <a class="shot fit zoom" href="images/projects/npath-receiver.png" data-group="projects"><img src="images/projects/thumbs/npath-receiver.png" alt="Time-domain waveforms and power spectral density of the N-path receiver outputs" width="655" height="368" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">NYU Wireless · Spring 2026</div>
+                <div class="where"><span>NYU Wireless</span><span class="when">Spring 2026</span></div>
                 <h3>Discrete-time modelling of N-path receivers with interference</h3>
                 <p>An end-to-end discrete-time simulator of an N-path receiver, including amplifier saturation and quantization. Derived closed-form input/output responses for signal and interference and benchmarked them against a conventional receiver.</p>
                 <ul class="tags"><li>N-path</li><li>Mixer-first Rx</li><li>Interference</li></ul>
@@ -189,7 +203,7 @@
               <span class="idx" aria-hidden="true">02</span>
               <a class="shot fit zoom" href="images/projects/learned-mlvamp.png" data-group="projects"><img src="images/projects/thumbs/learned-mlvamp.png" alt="Rate against interference power for learned MLVAMP, linear and oracle receivers" width="680" height="550" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">NYU Wireless · Summer 2025</div>
+                <div class="where"><span>NYU Wireless</span><span class="when">Summer 2025</span></div>
                 <h3>Learning-based signal recovery in nonlinear RF systems</h3>
                 <p>A learned MLVAMP algorithm with neural denoisers for recovering signals through nonlinear receivers under interference. Modelled the receiver impairments and built a hybrid inference framework around them. About 20 dB better than linear methods.</p>
                 <ul class="tags"><li>Bayesian inference</li><li>Deep unfolding</li><li>Message passing</li></ul>
@@ -199,7 +213,7 @@
               <span class="idx" aria-hidden="true">03</span>
               <a class="shot fill zoom" href="images/projects/ray-tracing.jpg" data-group="projects"><img src="images/projects/thumbs/ray-tracing.jpg" alt="3D city model with a transmitter, reference points and target points for ray tracing" width="1000" height="562" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">NYU Wireless · Summer 2024</div>
+                <div class="where"><span>NYU Wireless</span><span class="when">Summer 2024</span></div>
                 <h3>Interpolation for fast channel estimation in ray tracing</h3>
                 <p>Interpolation-based ray tracing to speed up channel modelling in Sionna, plus a reflection model for more accurate line-of-sight MIMO simulation and spherical-wavefront modelling.</p>
                 <ul class="tags"><li>mmWave</li><li>LOS MIMO</li><li>Sionna</li></ul>
@@ -209,7 +223,7 @@
               <span class="idx" aria-hidden="true">04</span>
               <a class="shot fit zoom" href="images/projects/sparse-recovery.png" data-group="projects"><img src="images/projects/thumbs/sparse-recovery.png" alt="Factor graph for AMP-SBL with multiple measurement vectors" width="1000" height="464" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">Communication Lab, IIT Madras · Fall 2022</div>
+                <div class="where"><span>IIT Madras</span><span class="when">Fall 2022</span></div>
                 <h3>Sparse signal recovery for massive random access</h3>
                 <p>Improved the sparse recovery stage of FASURA, a coding scheme for massive random access. Implemented SBL, MSBL, AMP-MSBL and GGAMP-MSBL from scratch.</p>
                 <ul class="tags"><li>Sparse recovery</li><li>SBL</li><li>AMP</li></ul>
@@ -218,13 +232,13 @@
           </div>
         </div>
         <div class="exp-panel" id="proj-course" role="tabpanel" aria-labelledby="tab-course">
-          <h3 class="label panel-label">Course projects</h3>
+          <h3 class="label panel-label">Coursework</h3>
           <div class="cards three">
             <article class="card fx">
               <span class="idx" aria-hidden="true">01</span>
               <a class="shot fill zoom" href="images/projects/music-classification.png" data-group="projects"><img src="images/projects/thumbs/music-classification.png" alt="Mel spectrogram of a music clip" width="880" height="785" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">NYU Tandon · Spring 2024</div>
+                <div class="where"><span>NYU Wireless</span><span class="when">Spring 2024</span></div>
                 <h3>Music classification with neural networks</h3>
                 <p>Librosa features, Adam and early stopping, tuned to 99% accuracy.</p>
                 <ul class="tags"><li>Audio signal processing</li><li>Librosa</li></ul>
@@ -234,7 +248,7 @@
               <span class="idx" aria-hidden="true">02</span>
               <a class="shot fit zoom" href="images/projects/knn-voters.png" data-group="projects"><img src="images/projects/thumbs/knn-voters.png" alt="Exit poll questionnaire used as the data source" width="1000" height="448" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">NYU Tandon · Spring 2024</div>
+                <div class="where"><span>NYU Wireless</span><span class="when">Spring 2024</span></div>
                 <h3>KNN voter classification from exit polls</h3>
                 <p>A custom distance metric for incomplete data; over 84% test accuracy.</p>
                 <ul class="tags"><li>KNN</li><li>Feature selection</li></ul>
@@ -244,7 +258,7 @@
               <span class="idx" aria-hidden="true">03</span>
               <a class="shot fit zoom" href="images/projects/mdp-observations.png" data-group="projects"><img src="images/projects/thumbs/mdp-observations.png" alt="Queueing diagram: arrivals, a waiting room and a server" width="1000" height="441" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">LARX, NYU Tandon · Fall 2023</div>
+                <div class="where"><span>NYU LARX</span><span class="when">Fall 2023</span></div>
                 <h3>MDPs with controlled observations</h3>
                 <p>A continuous-time MDP that also optimises when to observe, extended to a two-player setting.</p>
                 <ul class="tags"><li>MDPs</li><li>Multi-agent</li></ul>
@@ -254,7 +268,7 @@
               <span class="idx" aria-hidden="true">04</span>
               <a class="shot fit zoom" href="images/projects/viterbi-mlsd.png" data-group="projects"><img src="images/projects/thumbs/viterbi-mlsd.png" alt="Symbol error rate against SNR for several decoding delays" width="980" height="790" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">IIT Madras · Fall 2022</div>
+                <div class="where"><span>IIT Madras</span><span class="when">Fall 2022</span></div>
                 <h3>Maximum likelihood sequence detection</h3>
                 <p>A Viterbi sequence estimator; symbol error rate across SNR and decoding delay.</p>
                 <ul class="tags"><li>Viterbi</li><li>Sequence detection</li></ul>
@@ -264,7 +278,7 @@
               <span class="idx" aria-hidden="true">05</span>
               <a class="shot fit zoom" href="images/projects/mm2-queue.png" data-group="projects"><img src="images/projects/thumbs/mm2-queue.png" alt="Two parallel queues fed by a split Poisson arrival stream" width="1000" height="203" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">IIT Madras · Fall 2021</div>
+                <div class="where"><span>IIT Madras</span><span class="when">Fall 2021</span></div>
                 <h3>Parallel M/M/2 queue</h3>
                 <p>Simulated a two queue system where customers arrive with Poisson process.</p>
                 <ul class="tags"><li>Queueing theory</li><li>Poisson processes</li></ul>
@@ -274,7 +288,7 @@
               <span class="idx" aria-hidden="true">06</span>
               <a class="shot fill zoom" href="images/projects/toxic-comments.jpg" data-group="projects"><img src="images/projects/thumbs/toxic-comments.jpg" alt="Word cloud of the comment dataset" width="1087" height="541" loading="lazy"></a>
               <div class="card-body">
-                <div class="where">IIT Madras · Spring 2021</div>
+                <div class="where"><span>IIT Madras</span><span class="when">Spring 2021</span></div>
                 <h3>Toxic comment classification</h3>
                 <p>Naive Bayes, logistic regression, SVM and random forests on TF-IDF features.</p>
                 <ul class="tags"><li>NLP</li><li>TF-IDF</li><li>SVM</li></ul>
@@ -296,8 +310,8 @@
       <div class="exp">
         <div class="tabs" role="tablist" aria-label="Experience type">
           <button class="tab" type="button" role="tab" id="tab-industry" aria-controls="exp-industry" aria-selected="true">Industry <span class="count">3</span></button>
-          <button class="tab" type="button" role="tab" id="tab-teaching" aria-controls="exp-teaching" aria-selected="false">Teaching <span class="count">6</span></button>
-          <button class="tab" type="button" role="tab" id="tab-mentoring" aria-controls="exp-mentoring" aria-selected="false">Mentoring <span class="count">2</span></button>
+          <button class="tab" type="button" role="tab" id="tab-teaching" aria-controls="exp-teaching" aria-selected="false">Academic <span class="count">6</span></button>
+          <button class="tab" type="button" role="tab" id="tab-mentoring" aria-controls="exp-mentoring" aria-selected="false">Outreach <span class="count">2</span></button>
           <span class="tab-ind" aria-hidden="true"></span>
         </div>
         <div class="exp-panel" id="exp-industry" role="tabpanel" aria-labelledby="tab-industry">
@@ -307,7 +321,7 @@
               <span class="idx" aria-hidden="true">01</span>
               <div class="role-top"><img class="role-logo" src="images/logos/marvell.png" alt="" width="48" height="48" loading="lazy"><span class="when">Summer 2026</span></div>
               <h4>Digital Signal Processing Intern</h4>
-              <div class="org">Marvell Technology, Santa Clara</div>
+              <div class="org">Marvell Technology</div>
               <p>Built a scope-free TDECQ measurement flow to replace oscilloscope-based characterisation, and worked on transmitter FIR optimisation.</p>
               <ul class="tags"><li>TDECQ</li><li>FIR filters</li><li>DSP</li></ul>
             </li>
@@ -315,7 +329,7 @@
               <span class="idx" aria-hidden="true">02</span>
               <div class="role-top"><img class="role-logo" src="images/logos/barclays.png" alt="" width="48" height="48" loading="lazy"><span class="when">Summer 2021</span></div>
               <h4>Software Engineering Intern</h4>
-              <div class="org">Barclays, Pune</div>
+              <div class="org">Barclays</div>
               <p>Built a Docker-based file-sharing web portal in a team of three; front end in HTML, CSS and JavaScript.</p>
               <ul class="tags"><li>Docker</li><li>HTML</li><li>CSS</li><li>JavaScript</li></ul>
             </li>
@@ -323,18 +337,18 @@
               <span class="idx" aria-hidden="true">03</span>
               <div class="role-top"><img class="role-logo" src="images/logos/tan90.png" alt="" width="48" height="48" loading="lazy"><span class="when">Summer 2020</span></div>
               <h4>Electrical Engineering Intern</h4>
-              <div class="org">Tan90 Thermal Solutions, Chennai</div>
+              <div class="org">Tan90 Thermal Solutions</div>
               <p>A solar-powered Arduino cooling backpack for vaccines, with a power-distribution circuit that extended battery life by 15%.</p>
               <ul class="tags"><li>Arduino</li><li>Circuit design</li></ul>
             </li>
           </ol>
         </div>
         <div class="exp-panel" id="exp-teaching" role="tabpanel" aria-labelledby="tab-teaching">
-          <h3 class="label panel-label">Teaching</h3>
+          <h3 class="label panel-label">Academic</h3>
           <ol class="roles">
             <li class="role fx" style="--brand: #8f47d1">
               <span class="idx" aria-hidden="true">01</span>
-              <div class="role-top"><img class="role-logo" src="images/logos/nyu-wireless.png" alt="" width="48" height="48" loading="lazy"><span class="when live"><span class="pulse" aria-hidden="true"></span>2024 to now</span></div>
+              <div class="role-top"><img class="role-logo" src="images/logos/nyu-wireless.png" alt="" width="48" height="48" loading="lazy"><span class="when">2024 to now</span></div>
               <h4>Research Assistant</h4>
               <div class="org">NYU Wireless</div>
               <p>Wireless communications, statistical signal processing and AI/ML for wireless, with Dr. Sundeep Rangan.</p>
@@ -344,7 +358,7 @@
               <span class="idx" aria-hidden="true">02</span>
               <div class="role-top"><img class="role-logo" src="images/logos/nyu.png" alt="" width="48" height="48" loading="lazy"><span class="when">Fall 2024</span></div>
               <h4>Course Assistant</h4>
-              <div class="org">NYU Tandon</div>
+              <div class="org">NYU Wireless</div>
               <p>ECE2233, Introduction to Probability: LaTeX tutorials, MATLAB grading.</p>
               <ul class="tags"><li>Probability</li><li>LaTeX</li><li>MATLAB</li></ul>
             </li>
@@ -352,7 +366,7 @@
               <span class="idx" aria-hidden="true">03</span>
               <div class="role-top"><img class="role-logo" src="images/logos/nptel.png" alt="" width="48" height="48" loading="lazy"><span class="when">Spring 2023</span></div>
               <h4>Teaching Assistant</h4>
-              <div class="org">NPTEL Office, IIT Madras</div>
+              <div class="org">NPTEL</div>
               <p>Weekly tutorials for EE5111, Estimation Theory; supervised quizzes and end-semester exams.</p>
               <ul class="tags"><li>Estimation theory</li></ul>
             </li>
@@ -383,13 +397,13 @@
           </ol>
         </div>
         <div class="exp-panel" id="exp-mentoring" role="tabpanel" aria-labelledby="tab-mentoring">
-          <h3 class="label panel-label">Mentoring</h3>
+          <h3 class="label panel-label">Outreach</h3>
           <ol class="roles">
             <li class="role fx" style="--brand: #5ec9dd">
               <span class="idx" aria-hidden="true">01</span>
               <div class="role-top"><img class="role-logo" src="images/logos/saathi.png" alt="" width="48" height="48" loading="lazy"><span class="when">2020 to 2021</span></div>
               <h4>Student Mentor</h4>
-              <div class="org">Saathi, IIT Madras</div>
+              <div class="org">IIT Madras Saathi</div>
               <p>Mentored seven first-year students through their first year.</p>
               <ul class="tags"><li>Mentoring</li></ul>
             </li>
@@ -422,8 +436,8 @@
       </ul>     -->
       <div class="gallery">
         <a class="zoom" href="images/gallery/2026-10-29-1748.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-29-1748.jpg" alt="Cayucos pier at sunset" width="640" height="360" loading="lazy"><span class="cap" aria-hidden="true">Cayucos pier at sunset</span></a>
-        <a class="zoom" href="images/gallery/2026-10-29-1143.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-29-1143.jpg" alt="Cypress tree at Morro Bay Park" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">Cypress tree at Morro Bay Park</span></a>
-        <a class="zoom" href="images/gallery/2026-10-29-1055.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-29-1055.jpg" alt="Morro bay mirroring a blue sky" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">Morro bay mirroring a blue sky</span></a>
+        <a class="zoom" href="images/gallery/2026-10-29-1143.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-29-1143.jpg" alt="Cypress tree at Morro Bay State Park" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">Cypress tree at Morro Bay State Park</span></a>
+        <a class="zoom" href="images/gallery/2026-10-29-1055.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-29-1055.jpg" alt="Morro Bay mirroring a blue sky" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">Morro Bay mirroring a blue sky</span></a>
         <a class="zoom" href="images/gallery/2026-10-29-0743.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-29-0743.jpg" alt="Morro Rock Beach" width="640" height="360" loading="lazy"><span class="cap" aria-hidden="true">Morro Rock Beach</span></a>
         <a class="zoom" href="images/gallery/2026-10-29-0721.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-29-0721.jpg" alt="Morro Rock dome reflected in still water" width="640" height="360" loading="lazy"><span class="cap" aria-hidden="true">Morro Rock dome reflected in still water</span></a>
         <a class="zoom" href="images/gallery/2026-10-28-1657.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-28-1657.jpg" alt="McWay Falls on the coast of Big Sur" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">McWay Falls on the coast of Big Sur</span></a>
@@ -431,15 +445,15 @@
         <a class="zoom" href="images/gallery/2026-10-25-1044.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-10-25-1044.jpg" alt="Aerial view of Malibu" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">Aerial view of Malibu</span></a>
         <a class="zoom" href="images/gallery/2026-08-22-1009.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-08-22-1009.jpg" alt="Clear turquoise lake water near Vikingsholm" width="640" height="360" loading="lazy"><span class="cap" aria-hidden="true">Clear turquoise lake water near Vikingsholm</span></a>
         <a class="zoom" href="images/gallery/2026-08-22-0916.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-08-22-0916.jpg" alt="Emerald Bay ringed by forest" width="640" height="360" loading="lazy"><span class="cap" aria-hidden="true">Emerald Bay ringed by forest</span></a>
-        <a class="zoom" href="images/gallery/2026-08-09-1617.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-08-09-1617.jpg" alt="Golden Gate Bridge in fog" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">Golden Gate Bridge in fog</span></a>
+        <a class="zoom" href="images/gallery/2026-08-09-1617.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-08-09-1617.jpg" alt="The Golden Gate Bridge in fog" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">The Golden Gate Bridge in fog</span></a>
         <a class="zoom" href="images/gallery/2026-07-11-1540.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-07-11-1540.jpg" alt="Downtown San Francisco skyline" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">Downtown San Francisco skyline</span></a>
         <a class="zoom" href="images/gallery/2026-07-03-1525.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-07-03-1525.jpg" alt="The Painted Ladies, with downtown behind" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">The Painted Ladies, with downtown behind</span></a>
         <a class="zoom" href="images/gallery/2026-05-24-1944.jpg" data-group="gallery"><img src="images/gallery/thumbs/2026-05-24-1944.jpg" alt="Golden hour on Mission Peak" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">Golden hour on Mission Peak</span></a>
-        <a class="zoom" href="images/gallery/2025-10-17-2030.jpg" data-group="gallery"><img src="images/gallery/thumbs/2025-10-17-2030.jpg" alt="Lower Manhattan lit at night" width="481" height="640" loading="lazy"><span class="cap" aria-hidden="true">Lower Manhattan lit at night</span></a>
+        <a class="zoom" href="images/gallery/2025-10-17-2030.jpg" data-group="gallery"><img src="images/gallery/thumbs/2025-10-17-2030.jpg" alt="Lower Manhattan lit up at night" width="481" height="640" loading="lazy"><span class="cap" aria-hidden="true">Lower Manhattan lit up at night</span></a>
         <a class="zoom" href="images/gallery/2024-10-30-1345.jpg" data-group="gallery"><img src="images/gallery/thumbs/2024-10-30-1345.jpg" alt="The Lone Cypress at Monterey" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">The Lone Cypress at Monterey</span></a>
         <a class="zoom" href="images/gallery/2024-10-28-2023.jpg" data-group="gallery"><img src="images/gallery/thumbs/2024-10-28-2023.jpg" alt="Jellyfish at Monterey Bay Aquarium" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">Jellyfish at Monterey Bay Aquarium</span></a>
         <a class="zoom" href="images/gallery/2024-08-26-2359.jpg" data-group="gallery"><img src="images/gallery/thumbs/2024-08-26-2359.jpg" alt="The US Capitol lit up at night" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">The US Capitol lit up at night</span></a>
-        <a class="zoom" href="images/gallery/2024-03-18-2312.jpg" data-group="gallery"><img src="images/gallery/thumbs/2024-03-18-2312.jpg" alt="Manhattan seen from The Edge" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">Manhattan seen from The Edge</span></a>
+        <a class="zoom" href="images/gallery/2024-03-18-2312.jpg" data-group="gallery"><img src="images/gallery/thumbs/2024-03-18-2312.jpg" alt="Manhattan seen from Edge" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">Manhattan seen from Edge</span></a>
         <a class="zoom" href="images/gallery/2023-12-29-2049.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-12-29-2049.jpg" alt="Both sides of the Hudson" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">Both sides of the Hudson</span></a>
         <a class="zoom" href="images/gallery/2023-12-23-2110.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-12-23-2110.jpg" alt="Times Square on Christmas night" width="478" height="640" loading="lazy"><span class="cap" aria-hidden="true">Times Square on Christmas night</span></a>
         <a class="zoom" href="images/gallery/2023-11-05-2001.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-11-05-2001.jpg" alt="The Oculus among Lower Manhattan towers" width="640" height="640" loading="lazy"><span class="cap" aria-hidden="true">The Oculus among Lower Manhattan towers</span></a>
@@ -451,7 +465,7 @@
         <a class="zoom" href="images/gallery/2023-08-22-1733.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-08-22-1733.jpg" alt="Empty subway platform" width="640" height="640" loading="lazy"><span class="cap" aria-hidden="true">Empty subway platform</span></a>
         <a class="zoom" href="images/gallery/2023-05-14-1727.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-05-14-1727.jpg" alt="Pink skies from St. Thomas Mount" width="640" height="640" loading="lazy"><span class="cap" aria-hidden="true">Pink skies from St. Thomas Mount</span></a>
         <a class="zoom" href="images/gallery/2023-05-12-2101.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-05-12-2101.jpg" alt="Honeycomb, up close" width="640" height="640" loading="lazy"><span class="cap" aria-hidden="true">Honeycomb, up close</span></a>
-        <a class="zoom" href="images/gallery/2023-05-12-2053.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-05-12-2053.jpg" alt="Gold and light" width="639" height="640" loading="lazy"><span class="cap" aria-hidden="true">Gold and light</span></a>
+        <a class="zoom" href="images/gallery/2023-05-12-2053.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-05-12-2053.jpg" alt="A chandelier in gold and light" width="639" height="640" loading="lazy"><span class="cap" aria-hidden="true">A chandelier in gold and light</span></a>
         <a class="zoom" href="images/gallery/2023-04-28-2356.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-04-28-2356.jpg" alt="DJ night at IIT Madras" width="480" height="640" loading="lazy"><span class="cap" aria-hidden="true">DJ night at IIT Madras</span></a>
         <a class="zoom" href="images/gallery/2023-03-24-2213.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-03-24-2213.jpg" alt="TIFR campus at dusk" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">TIFR campus at dusk</span></a>
         <a class="zoom" href="images/gallery/2023-03-24-2103.jpg" data-group="gallery"><img src="images/gallery/thumbs/2023-03-24-2103.jpg" alt="Sunset at TIFR, Mumbai" width="640" height="480" loading="lazy"><span class="cap" aria-hidden="true">Sunset at TIFR, Mumbai</span></a>
@@ -495,13 +509,21 @@
 </main>
 
 <footer>
-  <div class="wrap">© <span id="yr"></span> Jayadev Joy · Hosted on GitHub Pages.</div>
+  <div class="wrap">© <span id="yr"></span> Jayadev Joy · Updated Nov 2026</div>
 </footer>
 
+<div class="toast" role="status" aria-live="polite"></div>
+<button class="to-top" type="button" aria-label="Back to top">
+  <svg viewBox="0 0 44 44" aria-hidden="true"><circle class="track" cx="22" cy="22" r="20"/><circle class="ring" cx="22" cy="22" r="20"/><path d="M22 28V16M16.5 21.5L22 16l5.5 5.5"/></svg>
+</button>
+
 <dialog class="lightbox" id="lightbox" aria-label="Image viewer">
+  <div class="lb-veil" aria-hidden="true"></div>
+  <div class="lb-ambient" aria-hidden="true"></div>
+  <span class="lb-count" aria-hidden="true"></span>
   <button class="lb-btn lb-close" type="button" aria-label="Close">&times;</button>
   <button class="lb-btn lb-prev" type="button" aria-label="Previous image">&#8249;</button>
-  <figure><img alt=""><figcaption></figcaption></figure>
+  <figure><span class="lb-frame"><span class="lb-shadow" aria-hidden="true"></span><img alt=""></span><figcaption></figcaption></figure>
   <button class="lb-btn lb-next" type="button" aria-label="Next image">&#8250;</button>
 </dialog>
 
