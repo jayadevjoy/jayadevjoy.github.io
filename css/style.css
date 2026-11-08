@@ -876,10 +876,10 @@ footer { padding: 28px 0 44px; color: var(--muted); font: 500 0.72rem var(--mono
   background: center / cover no-repeat; filter: blur(14px) saturate(1.5) brightness(0.55);
   opacity: 0; will-change: opacity;
 }
-.lightbox.photo .lb-ambient { opacity: 1; }
+.lightbox.photo .lb-ambient.on { opacity: 1; }   /* two layers: the backdrop crossfades between photos */
 .lightbox.photo img { background: none; }
 /* the shadow lives on its own layer (the zoom clips the image), so it can build up as the photo arrives */
-.lb-frame { position: relative; display: block; }
+.lb-frame { position: relative; display: block; will-change: transform, opacity; backface-visibility: hidden; }
 .lb-frame img { display: block; }   /* no baseline gap under the photo */
 .lb-shadow { position: absolute; inset: 0; z-index: -1; border-radius: 10px; box-shadow: 0 30px 90px -20px rgba(0, 0, 0, 0.7); pointer-events: none; }
 .lightbox:not(.photo) .lb-shadow { display: none; }

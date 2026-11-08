@@ -486,7 +486,10 @@ let lbSet = [], lbIdx = 0;
 // remember markup order before the gallery gets rearranged into columns
 document.querySelectorAll('a.zoom').forEach((a, i) => { a.dataset.i = i; });
 
-const lbAmb = lb.querySelector('.lb-ambient'), lbCount = lb.querySelector('.lb-count');
+const lbAmbs = [...lb.querySelectorAll('.lb-ambient')], lbCount = lb.querySelector('.lb-count');
+let lbAmb = lbAmbs[0];   // the visible backdrop layer
+let lbSliding = false, lbAmbPending = null;
+const lbPrefetched = new Map();
 // give the viewer image its final on-screen size up front (from the photo's shape), so the zoom grows
 // straight to full size even while the small thumbnail is the one loaded
 function sizeLbImg(thumb) {
@@ -500,14 +503,22 @@ function lbShow(i) {
   lbIdx = (i + lbSet.length) % lbSet.length;
   const a = lbSet[lbIdx], thumb = a.querySelector('img');
   // show the cached thumbnail at once, then swap in the full image when it has loaded
-  lbImg.src = thumb.currentSrc || thumb.src; lbImg.alt = thumb.alt; lbCap.textContent = thumb.alt;
+  const pre = lbPrefetched.get(a.href), ready = pre && pre.complete && pre.naturalWidth;
+  lbImg.src = ready ? a.href : (thumb.currentSrc || thumb.src);   // a preloaded full image is already decoded: use it straight away
+  lbImg.alt = thumb.alt; lbCap.textContent = thumb.alt;
   sizeLbImg(thumb);
   const full = new Image();
   full.onload = () => { if (lbSet[lbIdx] !== a) return; if (lbBusy) lbPending = a.href; else lbImg.src = a.href; };
-  full.src = a.href;
+  full.src = a.href;   // instant when it was prefetched
   const photo = a.dataset.group === 'gallery';
   lb.classList.toggle('photo', photo);
-  lbAmb.style.backgroundImage = photo ? `url("${thumb.currentSrc || thumb.src}")` : '';
+  const amb = photo ? `url("${thumb.currentSrc || thumb.src}")` : '';
+  if (lbSliding) lbAmbPending = amb; else lbAmb.style.backgroundImage = amb;   // a backdrop redraw mid-slide would stutter
+  // load and decode the neighbours' full images ahead of time, so the next slide has nothing to wait for
+  for (const k of [lbIdx + 1, lbIdx - 1]) {
+    const n = lbSet[(k + lbSet.length) % lbSet.length];
+    if (n && !lbPrefetched.has(n.href)) { const im = new Image(); im.src = n.href; im.decode && im.decode().catch(() => {}); lbPrefetched.set(n.href, im); }
+  }
   const multi = lbSet.length > 1;
   lbCount.textContent = multi ? `${String(lbIdx + 1).padStart(2, '0')} / ${String(lbSet.length).padStart(2, '0')}` : '';
   lb.querySelector('.lb-prev').hidden = lb.querySelector('.lb-next').hidden = !multi;
@@ -612,8 +623,54 @@ function lbClose() {
 }
 lb.addEventListener('cancel', e => { e.preventDefault(); lbClose(); });   // Esc
 lb.querySelector('.lb-close').addEventListener('click', lbClose);
-lb.querySelector('.lb-prev').addEventListener('click', () => lbShow(lbIdx - 1));
-lb.querySelector('.lb-next').addEventListener('click', () => lbShow(lbIdx + 1));
+// next / previous: a filmstrip slide. A copy of the current photo glides fully off one side while
+// the next glides in from the other, side by side; the blurred backdrop crossfades on the same clock.
+let lbStepId = 0, lbStepAnims = [], lbStepClone = null;
+function lbStepTidy() {
+  lbStepAnims.forEach(a => a.cancel()); lbStepAnims = [];
+  if (lbStepClone) { lbStepClone.remove(); lbStepClone = null; }
+  lb.querySelector('.lb-frame').style.opacity = '';
+  if (lbSliding) {   // motion over: swap in the full-res photo
+    lbSliding = false; lbBusy = false;
+    if (lbPending) { lbImg.src = lbPending; lbPending = null; }
+    if (lbAmbPending !== null) { lbAmb.style.backgroundImage = lbAmbPending; lbAmbPending = null; }
+  }
+}
+function lbStep(d) {
+  if (lbSet.length < 2) return;
+  if (reduce || !lb.open || lb.classList.contains('closing')) { lbShow(lbIdx + d); return; }
+  lbStepTidy();   // a quick repeat click starts the next slide from where things are
+  const id = ++lbStepId, frame = lb.querySelector('.lb-frame'), r = frame.getBoundingClientRect();
+  // the current photo as a copy sitting exactly where it is
+  const clone = frame.cloneNode(true);
+  clone.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;will-change:transform`;
+  lb.appendChild(clone); lbStepClone = clone;
+  lbSliding = true; lbBusy = true;   // hold the full-res swap until the slide ends
+  lbShow(lbIdx + d);
+  // one motion, like flicking through photos: both travel a full screen width together,
+  // the current photo out of frame on one side, the next into place from the other
+  const w = innerWidth, dur = 600, ease = 'cubic-bezier(.4, 0, .2, 1)';
+  lbStepAnims = [
+    clone.animate([{ transform: 'translate3d(0,0,0)' }, { transform: `translate3d(${-d * w}px,0,0)` }], { duration: dur, easing: ease, fill: 'both' }),
+    frame.animate([{ transform: `translate3d(${d * w}px,0,0)` }, { transform: 'translate3d(0,0,0)' }], { duration: dur, easing: ease, fill: 'both' }),
+    lbCap.animate([{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1 }], { duration: dur, fill: 'both' }),
+  ];
+  // the backdrop crossfades on the same clock
+  if (lbAmbPending !== null) {
+    const from = lbAmb, to = lbAmbs.find(x => x !== from);
+    to.style.backgroundImage = lbAmbPending; lbAmbPending = null;
+    to.classList.add('on'); from.classList.remove('on');
+    lbStepAnims.push(
+      to.animate([{ opacity: 0 }, { opacity: 1 }], { duration: dur, easing: ease, fill: 'both' }),
+      from.animate([{ opacity: 1 }, { opacity: 0 }], { duration: dur, easing: ease, fill: 'both' }));
+    lbAmb = to;
+  }
+  const done = () => { if (id === lbStepId) lbStepTidy(); };
+  lbStepAnims[1].finished.then(done, () => {});
+  setTimeout(done, dur + 120);   // never leave the copy behind if the animation doesn't report back
+}
+lb.querySelector('.lb-prev').addEventListener('click', () => lbStep(-1));
+lb.querySelector('.lb-next').addEventListener('click', () => lbStep(1));
 lb.addEventListener('click', e => { if (e.target === lb) lbClose(); });   // click outside the image
 // swipe between photos on touch screens
 let swipeX = null;
@@ -621,20 +678,13 @@ lb.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') swipeX 
 lb.addEventListener('pointerup', e => {
   if (swipeX === null) return;
   const dx = e.clientX - swipeX; swipeX = null;
-  if (Math.abs(dx) > 50 && lbSet.length > 1) lbShow(lbIdx + (dx < 0 ? 1 : -1));
+  if (Math.abs(dx) > 50 && lbSet.length > 1) lbStep(dx < 0 ? 1 : -1);
 });
 lb.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft') lbShow(lbIdx - 1);
-  if (e.key === 'ArrowRight') lbShow(lbIdx + 1);
+  if (e.key === 'ArrowLeft') lbStep(-1);
+  if (e.key === 'ArrowRight') lbStep(1);
 });
-let touchX = null;
-lb.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
-lb.addEventListener('touchend', e => {
-  if (touchX === null) return;
-  const dx = e.changedTouches[0].clientX - touchX; touchX = null;
-  if (Math.abs(dx) > 50) lbShow(lbIdx + (dx < 0 ? 1 : -1));
-});
-lb.addEventListener('close', () => { lbImg.removeAttribute('src'); });
+lb.addEventListener('close', () => { lbStepId++; lbStepTidy(); lbImg.removeAttribute('src'); });   // drop any slide still in flight
 
 // ---------- gallery: mosaic of mixed tile sizes (newest first) ----------
 // rows are half a column tall, so each photo gets a tile close to its own shape:
